@@ -3,6 +3,8 @@
 %Date created: 2020-10-30
 %Last updated: 2022-07-11 
 %
+%[IMUPitch, IMURoll] = comp_filt(accel, gyro,fs, weight)
+%
 %Complementary filter that combines the accelerometer and gyro data as
 %as seen in general formula:
 %angle = (weight of gyro data)*(angle+gyrData*dt) + (1-weight)(accData)

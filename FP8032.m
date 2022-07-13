@@ -3,23 +3,28 @@
 %Date Created: 2022-01-10
 %Last Updated: 2022-07-11
 %
+%[fxfinal,fyfinal,fzfinal,mxfinal,myfinal,mzfinal] = FP8032(rawData,fs,cutoff)
+%
 %Function to convert raw (V) data from force plateform to calibrated forces
 %(N) & moments (Nm) for AMTI OR6-7 "8032" (Note that the calibration matrix
 %is specific for this device ONLY)
 %Input:
-% - raw data (1-3: Fx,Fy,Fz; 4-6: Mx,My,Mz). I recommend you filter this
-% before. Must be as nx6 matrix.
+% - raw data (1-3: Fx,Fy,Fz; 4-6: Mx,My,Mz). Must be as nx6 matrix.
+% - sample rate (Hz)
+% - lowpass filter cutoff
 %Output:
 % - calibrated data (see names) in N or Nm
 
-function [fxfinal,fyfinal,fzfinal,mxfinal,myfinal,mzfinal] = FP8032(rawData)
+function [fxfinal,fyfinal,fzfinal,mxfinal,myfinal,mzfinal] = FP8032(rawData,fs,cutoff)
     
-    Fx = rawData(:,1);
-    Fy = rawData(:,2);
-    Fz = rawData(:,3);
-    Mx = rawData(:,4);
-    My = rawData(:,5);
-    Mz = rawData(:,6);
+    cut=cutoff/(fs*0.5);
+    [B,A]=butter(2,cut);
+    Fx =  filtfilt(B,A,rawData(:,1));
+    Fy =  filtfilt(B,A,rawData(:,2));
+    Fz =  filtfilt(B,A,rawData(:,3));
+    Mx =  filtfilt(B,A,rawData(:,4));
+    My =  filtfilt(B,A,rawData(:,5));
+    Mz =  filtfilt(B,A,rawData(:,6));
 
     SensitivityMatrix = ...
     [0.6665886 -0.0046187 -0.0015756 0.0041294 -0.0032712 0.006524745;...

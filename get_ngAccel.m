@@ -3,14 +3,18 @@
 %Date created: 2020-10-30
 %Last updated: 2021-07-11
 %
+%[x_ng_accel, y_ng_accel] = get_ngAccel(accel, x_tilt, y_tilt,fs)
+%
 %Function to return the acceleration measures (from IMU) with gravity removed 
 %Input: 
 % - raw accelerations (NED)
 % - pitch tilt (N = +) (deg)
 % - roll tilt (E = +) (deg)
+% - sample rate (Hz)
+% - filter cutoff
 %Output: 
-% - accelerations in x and y directions without gravity (filtered @ 30Hz)
-function [x_ng_accel, y_ng_accel] = get_ngAccel(accel, x_tilt, y_tilt,fs)
+% - accelerations in x and y directions without gravity 
+function [x_ng_accel, y_ng_accel] = get_ngAccel(accel, x_tilt, y_tilt,fs, cutoff)
     
     
     [x_grav, y_grav] = get_expected_g(x_tilt, y_tilt);
@@ -18,8 +22,7 @@ function [x_ng_accel, y_ng_accel] = get_ngAccel(accel, x_tilt, y_tilt,fs)
     ng_x = ((accel(:,1) - x_grav(:,1)).*cosd(x_tilt)) -((accel(:,3) - x_grav(:,2)).*sind(x_tilt));
     ng_y = ((accel(:,2) - y_grav(:,1)).*cosd(y_tilt)) -((accel(:,3) - y_grav(:,2)).*sind(y_tilt));
     
-    accel_cutoff = 30;
-    [b1,a1] = butter(4, accel_cutoff./(fs/2));
+    [b1,a1] = butter(4, cutoff./(fs/2));
     x_ng_accel = filtfilt(b1,a1, ng_x);
     y_ng_accel = filtfilt(b1,a1, ng_y);  
 end

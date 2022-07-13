@@ -3,6 +3,8 @@
 %Date Created: 2022-05-22
 %Last Updated: 2022-06-30
 %
+%[h,f,t] = cohensMorletTX(x,freqList,fwhmList,fs)
+%
 %Function to apply a Morlet Wavelet transform with variable "Full width at
 %half maximum". Based off of Mike X Cohen's code & work. 
 %Citation:
