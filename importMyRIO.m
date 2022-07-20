@@ -1,7 +1,9 @@
 %File: importMyRIO.m
 %Author: Liam Foulger
 %Date Created: 2022-05-01
-%Last Updated: 2022-06-30
+%Last Updated: 2022-07-19
+%
+%Adapted from code by Anthony Chen
 %
 %Function to get the data from a trial folder from the myRIO device, and
 %collate all the minute folders into a single matrix that is correctly
