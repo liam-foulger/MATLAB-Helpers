@@ -64,12 +64,13 @@ function [Rsteps,Lsteps] = footStepDetection(rightIMU, leftIMU, fs, NamePairArgu
     
     %make sure no double steps detected
     [RfiltMax2, LfiltMax2] = removeDoubleSteps(RfiltMax,RpitchVelMov,LfiltMax,LpitchVelMov);
-    numSteps = min([length(RfiltMax2) length(LfiltMax2)]) -1;
+    
     
     %make sure first step is R
     if LfiltMax2(1) < RfiltMax2(1)
         LfiltMax2(1) = [];
     end
+    numSteps = min([length(RfiltMax2) length(LfiltMax2)]) -1;
     
     Rsteps = NaN(numSteps,1);
     Lsteps = NaN(numSteps,1);
