@@ -3,6 +3,8 @@
 %Date Created: 2022-05-01
 %Last Updated: 2022-07-19
 %
+%[RstepIDX, LstepIDX] = removeDoubleSteps(RstepIDX,Rsignal,LstepIDX,Lsignal)
+%
 %Function to remove double step indexes by choosing the largest peak when 2
 %from the same foot are in a row
 %

@@ -11,10 +11,10 @@
 %(Note I've validated that this works correctly with Neurospec 2.0)
 %
 %Inputs:
-% - input signal
-% - output signal
+% - input signal (n x 1)
+% - output signal (n x 1)
 % - length of window for fft analysis (s)
-% - signal sample rate 
+% - signal sample rate (Hz)
 %Outputs: 
 % - f: array of frequencies
 % - coherence between input and output

@@ -3,6 +3,8 @@
 %Date Created: 2022-06-27
 %Last Updated: 2022-07-19
 %
+%[strides, stridesPadded, cadence] = sortStrides(data, strideIDXs, fs, newLength)
+%
 %Function to return the dataset split into normalized strides and
 %non-normalized padded strides
 %
@@ -21,14 +23,14 @@
 % - the average step cadence
 
 
-function [strides, stridesPadded, cadence] = sortStrides(varargin)
-    if length(varargin) < 3
-        return
+function [strides, stridesPadded, cadence] = sortStrides(data, strideIDXs, fs, newLength)
+    
+    arguments
+        data double
+        strideIDXs double
+        fs double
+        newLength (1,1) {mustBeNumeric} = 0
     end
-
-    data = varargin{1} ;
-    strideIDXs = varargin{2};
-    fs = varargin{3};
     
     avgStride = mean(strideIDXs(3,:) - strideIDXs(1,:));
     if rem(floor(avgStride),2) == 0
@@ -37,11 +39,10 @@ function [strides, stridesPadded, cadence] = sortStrides(varargin)
         avgStride = ceil(avgStride);
     end
     
-    if length(varargin) < 4
+    if newLength == 0
         newLength = avgStride;
-    else
-        newLength = varargin{4};
     end
+    
     halfLength = newLength/2;
     
     for jj = 1:size(strideIDXs,2)

@@ -13,7 +13,7 @@
 % - gyro data (rad/s)
 % - sensor sampling rate (Hz)
 % - weight of gyroscope data for comp filter (recommended 0.98, but found best results @ d ~ 0.995)
-%assumes North(x)-East(y)-Down(z) Orientation of sensor data
+%**assumes North(x)-East(y)-Down(z) Orientation of sensor data**
 %output: tilt in degrees (Roll and pitch)
 
 function [IMUPitch, IMURoll] = comp_filt(accel, gyro,fs, weight)

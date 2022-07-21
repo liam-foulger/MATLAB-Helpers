@@ -3,6 +3,8 @@
 %Date Created: 2022-06-17
 %Last Updated: 2022-07-20
 %
+%[Rsteps,Lsteps] = footStepDetection(rightIMU, leftIMU, fs, options)
+%
 %Function to detect steps from left and right foot/ankle IMUs. Returns the
 %step indices for each foot contact. 
 %2 possible methods:
@@ -17,33 +19,39 @@
 %   - less delay than method 1 but more variable so I do not recommend.
 %
 %Inputs:
-% - right IMU data (XYZ accel & XYZ gyro; assumes X:forward, Y: right, Z:
+% - right IMU data (XYZ accel & XYZ gyro (deg/s); assumes X:forward, Y: right, Z:
 % down)
 % - left IMU data 
 % - sample rate (Hz)
-% - method: 'zero' (default) or 'peak' 
+% - NamePair arugments:
+%    - 'Method': 'zero' (default) or 'peak' 
+%    - 'Showplots': 1 (true) or 0 (false, default). If you want to show the plots
+%    - 'MinPeakHeight'. Min height of peak angular velocity. Default is
+%    50. For findpeaks function.
+%    - 'MinPeakProminence'. Min peak prominence of angular velocity. Default is
+%    100. For findpeaks function.
 %Outputs: 
-
-
+% - right step indices
+% - left step indices
+%
 %Dependencies
 % - removeDoubleSteps.m
 % - getZeroCrossings.m
-function [leftSteps, rightSteps] = footStepDetection(varargin)
-    if length(varargin) < 3
-        return
-    end
 
-    rightIMU = varargin{1};
-    leftIMU = varargin{2}
-    fs = varargin{3}
+
+function [Rsteps,Lsteps] = footStepDetection(rightIMU, leftIMU, fs, options)
     
-    if length(varargin) < 4
-        method = 'zero';
-    else
-        method = varargin{4};
+    arguments
+        rightIMU double
+        leftIMU double
+        fs double
+        options.Method (1,1) string = 'zero'
+        options.Showplots (1,1) {mustBeNumeric} = 0
+        options.MinPeakHeight (1,1) {mustBeNumeric} = 50
+        options.MinPeakProminence (1,1) {mustBeNumeric} = 100
     end
     
-    
+    %detrend data
     RpitchVel = detrend(rightIMU(:,5));
     LpitchVel = detrend(leftIMU(:,5));
     
@@ -51,78 +59,88 @@ function [leftSteps, rightSteps] = footStepDetection(varargin)
     movRange = fs/20;
     RpitchVelMov = movmean(RpitchVel, movRange);
     LpitchVelMov = movmean(LpitchVel, movRange);
-    [~, Rmins] = findpeaks(RpitchVelMov,'MinPeakHeight',50, 'MinPeakProminence', 100);
-    [~, Lmins] = findpeaks(LpitchVelMov,'MinPeakHeight',50, 'MinPeakProminence', 100);
-    
-    %show results
-%     figure
-%     plot(RpitchVelMov,'r')
-%     hold on
-%     plot(LpitchVelMov,'b')
-%     plot(Rmins, RpitchVelMov(Rmins),'o')
-%     plot(Lmins, LpitchVelMov(Lmins),'o')
-%     legend('R','L')
+    [~, RfiltMax] = findpeaks(RpitchVelMov,'MinPeakHeight',options.MinPeakHeight, 'MinPeakProminence', options.MinPeakProminence);
+    [~, LfiltMax] = findpeaks(LpitchVelMov,'MinPeakHeight',options.MinPeakHeight, 'MinPeakProminence', options.MinPeakProminence);
     
     %make sure no double steps detected
-    [Rmaxs, Lmaxs] = removeDoubleSteps(Rmins,RpitchVelMov,Lmins,LpitchVelMov);
-    
-%     %find max peak of angular velocity that is within first 1/2 of two mins
-    numSteps = min([length(Rmins) length(Lmins)]) -1;
-%     Rmaxs = NaN(numSteps,1);
-%     Lmaxs = NaN(numSteps,1);
-%     for ii = 1:numSteps
-%         searchRange = round((Rmins(ii+1)-Rmins(ii))/2);
-%         [~,idx] = max(RpitchVelMov(Rmins(ii):(Rmins(ii)+searchRange)));
-%         Rmaxs(ii) = Rmins(ii) + idx - 1;
-%         
-%         searchRange = round((Lmins(ii+1)-Lmins(ii))/2);
-%         [~,idx] = max(LpitchVelMov(Lmins(ii):(Lmins(ii)+searchRange)));
-%         Lmaxs(ii) = Lmins(ii) + idx - 1;
-% 
-% %         searchRange = round((Rmins(ii+1)-Rmins(ii))/2);
-% %         [~,idx] = max(RpitchVel(Rmins(ii)+searchRange:(Rmins(ii+1))));
-% %         Rmaxs(ii) = Rmins(ii)+searchRange + idx - 1;
-% %         
-% %         searchRange = round((Lmins(ii+1)-Lmins(ii))/2);
-% %         [~,idx] = max(LpitchVel(Lmins(ii)+searchRange:(Lmins(ii+1))));
-% %         Lmaxs(ii) = Lmins(ii) +searchRange+ idx - 1;
-%     end
-%     
-%     figure
-%     plot(RpitchVel,'r')
-%     hold on
-%     plot(LpitchVel,'b')
-%     plot(Rmaxs, RpitchVel(Rmaxs),'o')
-%     plot(Lmaxs, LpitchVel(Lmaxs),'o')
-%     legend('R','L')
-    
-    Rzeros = NaN(numSteps,1);
-    Lzeros = NaN(numSteps,1);
-    %find next zero crossing
-    for ii = 1:numSteps
-        idx = getZeroCrossings(RpitchVel(Rmaxs(ii):end),'down');
-        Rzeros(ii) = Rmaxs(ii) - 1 + idx(1);
-        
-        idx = getZeroCrossings(LpitchVel(Lmaxs(ii):end),'down');
-        Lzeros(ii) = Lmaxs(ii) - 1 + idx(1);
-    end
-%     
-%     figure
-%     plot(RpitchVel,'r')
-%     hold on
-%     plot(LpitchVel,'b')
-%     plot(Rzeros, RpitchVel(Rzeros),'o')
-%     plot(Lzeros, LpitchVel(Lzeros),'o')
-%     legend('R','L')
-    
-    
-    
-    %assign to final variables
-    leftSteps = Lzeros;
-    rightSteps = Rzeros;
+    [RfiltMax2, LfiltMax2] = removeDoubleSteps(RfiltMax,RpitchVelMov,LfiltMax,LpitchVelMov);
+    numSteps = min([length(RfiltMax2) length(LfiltMax2)]) -1;
     
     %make sure first step is R
-    if leftSteps(1) < rightSteps(1)
-        leftSteps(1) = [];
+    if LfiltMax2(1) < RfiltMax2(1)
+        LfiltMax2(1) = [];
     end
+    
+    Rsteps = NaN(numSteps,1);
+    Lsteps = NaN(numSteps,1);
+    
+    %find final index depending on method
+    switch options.Method
+        case 'zero'
+            
+            %find next zero crossing
+            for ii = 1:numSteps
+                searchRange = min([length( RfiltMax2(ii):(RfiltMax2(ii)+(fs)) )...
+                                    length( RfiltMax2(ii):RfiltMax2(end) )...
+                                    ]);
+                idx = getZeroCrossings(RpitchVel((RfiltMax2(ii)):(RfiltMax2(ii)+searchRange)),'down');
+                Rsteps(ii) = RfiltMax2(ii) - 1 + idx(1);
+                
+                searchRange = min([length( LfiltMax2(ii):(LfiltMax2(ii)+(fs)) ) ...
+                                    length( LfiltMax2(ii):LfiltMax2(end) )...
+                                    ]);
+                idx = getZeroCrossings(LpitchVel((LfiltMax2(ii)):(LfiltMax2(ii)+searchRange)),'down');
+                Lsteps(ii) = LfiltMax2(ii) - 1 + idx(1);
+            end
+        case 'peak'
+            for ii = 1:numSteps
+                searchRange = movRange*2;
+                [~, idx] = max( RpitchVel((RfiltMax2(ii)-searchRange):(RfiltMax2(ii)+searchRange)) );
+                Rsteps(ii) = RfiltMax2(ii) -searchRange - 1 + idx;
+
+                [~, idx] = max( LpitchVel((LfiltMax2(ii)-searchRange):(LfiltMax2(ii)+searchRange)) );
+                Lsteps(ii) = LfiltMax2(ii) -searchRange - 1 + idx;
+            end
+    end
+    
+    %remove duplicates
+    [Rsteps, Lsteps] = removeDoubleSteps(Rsteps,-abs(RpitchVel),Lsteps,-abs(LpitchVel));
+
+    %make sure first step is R
+    if Lsteps(1) < Rsteps(1)
+        Lsteps(1) = [];
+    end
+
+  %show results 
+    if options.Showplots
+        dt = 1/fs;
+        t = (1:length(RpitchVelMov))'.*dt;
+        figure
+        plot(t,RpitchVelMov,'r')
+        hold on
+        plot(t,LpitchVelMov,'b')
+        plot(RfiltMax2.*dt, RpitchVelMov(RfiltMax2),'o')
+        plot(LfiltMax2.*dt, LpitchVelMov(LfiltMax2),'o')
+        legend('R','L')
+        title('Filtered Peak Detection')
+        ylabel('Filtered Angular Velocity (deg/s)')
+        xlabel('Time (s)')
+
+        figure
+        plot(t,RpitchVel,'r')
+        hold on
+        plot(t,LpitchVel,'b')
+        plot(Rsteps.*dt, RpitchVel(Rsteps),'o')
+        plot(Lsteps.*dt, LpitchVel(Lsteps),'o')
+        legend('R','L')
+        title('Method: ' + options.Method)
+        ylabel('Angular Velocity (deg/s)')
+        xlabel('Time (s)')
+        
+    end
+    
+    
+    
+    
+  
 end

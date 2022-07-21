@@ -14,14 +14,14 @@
 %
 %Inputs:
 %x: data array (n x 1)
-%freqList: array of frequencies you want to analyze
+%freqList: array of frequencies you want to analyze (m x 1)
 %fwhmList: array of full widths at half maximum that correspond to each
 %element in the frequency list. Note that they shouldn't be shorter than
 %1/f and increasing the width will decrease time resolution but increase
-%frequence resolution. Read the paper for more info.
+%frequence resolution. Read the paper for more info. (m x 1)
 %fs: sampling rate of data
 %Outputs:
-%-h: data matrix
+%-h: data matrix (n x m)*(check this)
 %-f: frequencies (Hz)
 %-t: time points (s)
 

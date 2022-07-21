@@ -30,6 +30,10 @@ function zeros = getZeroCrossings(signal,type)
         if f(signal(ii),positive)
             [~, loc] = min([abs(signal(ii-1)) abs(signal(ii))]);
             zeros = [zeros; ii-2+loc];
+            %remove zero crossings if they are only for 1 sample
+            if length(signal) > ii && (signal(ii) > 0) ~= (signal(ii+1) > 0)
+                zeros(end) = [];
+            end
         end
         
         positive = signal(ii) > 0;

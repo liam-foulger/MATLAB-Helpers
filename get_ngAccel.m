@@ -7,13 +7,14 @@
 %
 %Function to return the acceleration measures (from IMU) with gravity removed 
 %Input: 
-% - raw accelerations (NED)
+% - raw accelerations (NED) (n x 3) (m/s^2)
 % - pitch tilt (N = +) (deg)
 % - roll tilt (E = +) (deg)
 % - sample rate (Hz)
-% - filter cutoff
+% - filter cutoff (Hz)
 %Output: 
-% - accelerations in x and y directions without gravity 
+% - accelerations in x and y directions without gravity (m/s^2)
+
 function [x_ng_accel, y_ng_accel] = get_ngAccel(accel, x_tilt, y_tilt,fs, cutoff)
     
     

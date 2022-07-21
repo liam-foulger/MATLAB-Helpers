@@ -3,7 +3,7 @@
 %Date Created: 2022-05-01
 %Last Updated: 2022-07-19
 %
-%Adapted from code by Anthony Chen
+%rawData = importMyRIO(selpath)
 %
 %Function to get the data from a trial folder from the myRIO device, and
 %collate all the minute folders into a single matrix that is correctly
@@ -14,6 +14,8 @@
 %Output:
 %-rawData: collated raw data, where rows are time points and columns are
 %different data measures from myRIO
+%
+%Adapted from code by Anthony Chen
 
 function rawData = importMyRIO(selpath)
 D = char(selpath);
@@ -26,6 +28,10 @@ for ii = 1:numel(N)
     N_sorted{idx} = N{ii};
     
 end
+
+%remove empty cells
+N_sorted = N_sorted(~cellfun('isempty',N_sorted));
+
 rawData = [];
 for ii = 1:numel(N)
     T = fullfile(D,N_sorted{ii});

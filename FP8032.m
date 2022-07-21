@@ -9,13 +9,13 @@
 %(N) & moments (Nm) for AMTI OR6-7 "8032" (Note that the calibration matrix
 %is specific for this device ONLY)
 %Input:
-% - raw data (1-3: Fx,Fy,Fz; 4-6: Mx,My,Mz). Must be as nx6 matrix.
+% - raw data (1-3: Fx,Fy,Fz; 4-6: Mx,My,Mz; all in V). Must be as n x 6 matrix. 
 % - sample rate (Hz)
-% - lowpass filter cutoff
+% - lowpass filter cutoff (Hz)
 %Output:
-% - calibrated data (see names) in N or Nm
+% - calibrated data (same order as input) in N or Nm. (n x 6)
 
-function [fxfinal,fyfinal,fzfinal,mxfinal,myfinal,mzfinal] = FP8032(rawData,fs,cutoff)
+function FP = FP8032(rawData,fs,cutoff)
     
     cut=cutoff/(fs*0.5);
     [B,A]=butter(2,cut);
@@ -56,5 +56,6 @@ function [fxfinal,fyfinal,fzfinal,mxfinal,myfinal,mzfinal] = FP8032(rawData,fs,c
     myfinal = myfinal+(fxfinal*zoff)+(fzfinal*xoff);
     mzfinal = mzfinal-(fxfinal*yoff)-(fyfinal*xoff);
 
+    FP = [fxfinal fyfinal fzfinal mxfinal myfinal mzfinal];
     
 end

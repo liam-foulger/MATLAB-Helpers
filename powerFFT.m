@@ -9,12 +9,12 @@
 %(NOT YET VALIDATED WITH NEUROSPEC!!!!!)
 %
 %Inputs:
-% - signal
+% - signal (n x 1)
 % - length of window for fft analysis (s)
-% - signal sample rate 
+% - signal sample rate (Hz)
 %Outputs: 
-% - f: array of frequencies
-% - power spectrum
+% - f: array of frequencies (Hz)
+% - power spectrum 
 
 function [f, power] = powerFFT(signal, windowLength, fs)
 
