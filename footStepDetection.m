@@ -10,7 +10,7 @@
 %2 possible methods:
 % 1) Y angular velocity zero crossings:
 %   - Finds the + to - zero crossing following the peak + angular velocity
-%   - Detected heel strikes have ~100ms delay from true timing, but better
+%   - Detected heel strikes are 50-100ms prior to the true timing, but better
 %   reliability
 %   - Based on method from Mariani et al. (2013) doi: 10.1109/TBME.2012.2227317
 % 2) Y angular velocity peak
@@ -23,7 +23,7 @@
 % down)
 % - left IMU data 
 % - sample rate (Hz)
-% - NamePair arugments:
+% - NamePairArugments:
 %    - 'Method': 'zero' (default) or 'peak' 
 %    - 'Showplots': 1 (true) or 0 (false, default). If you want to show the plots
 %    - 'MinPeakHeight'. Min height of peak angular velocity. Default is
@@ -39,16 +39,16 @@
 % - getZeroCrossings.m
 
 
-function [Rsteps,Lsteps] = footStepDetection(rightIMU, leftIMU, fs, options)
+function [Rsteps,Lsteps] = footStepDetection(rightIMU, leftIMU, fs, NamePairArguments)
     
     arguments
         rightIMU double
         leftIMU double
         fs double
-        options.Method (1,1) string = 'zero'
-        options.Showplots (1,1) {mustBeNumeric} = 0
-        options.MinPeakHeight (1,1) {mustBeNumeric} = 50
-        options.MinPeakProminence (1,1) {mustBeNumeric} = 100
+        NamePairArguments.Method (1,1) string = 'zero'
+        NamePairArguments.Showplots (1,1) {mustBeNumeric} = 0
+        NamePairArguments.MinPeakHeight (1,1) {mustBeNumeric} = 50
+        NamePairArguments.MinPeakProminence (1,1) {mustBeNumeric} = 100
     end
     
     %detrend data
@@ -59,8 +59,8 @@ function [Rsteps,Lsteps] = footStepDetection(rightIMU, leftIMU, fs, options)
     movRange = fs/20;
     RpitchVelMov = movmean(RpitchVel, movRange);
     LpitchVelMov = movmean(LpitchVel, movRange);
-    [~, RfiltMax] = findpeaks(RpitchVelMov,'MinPeakHeight',options.MinPeakHeight, 'MinPeakProminence', options.MinPeakProminence);
-    [~, LfiltMax] = findpeaks(LpitchVelMov,'MinPeakHeight',options.MinPeakHeight, 'MinPeakProminence', options.MinPeakProminence);
+    [~, RfiltMax] = findpeaks(RpitchVelMov,'MinPeakHeight',NamePairArguments.MinPeakHeight, 'MinPeakProminence', NamePairArguments.MinPeakProminence);
+    [~, LfiltMax] = findpeaks(LpitchVelMov,'MinPeakHeight',NamePairArguments.MinPeakHeight, 'MinPeakProminence', NamePairArguments.MinPeakProminence);
     
     %make sure no double steps detected
     [RfiltMax2, LfiltMax2] = removeDoubleSteps(RfiltMax,RpitchVelMov,LfiltMax,LpitchVelMov);
@@ -75,7 +75,7 @@ function [Rsteps,Lsteps] = footStepDetection(rightIMU, leftIMU, fs, options)
     Lsteps = NaN(numSteps,1);
     
     %find final index depending on method
-    switch options.Method
+    switch NamePairArguments.Method
         case 'zero'
             
             %find next zero crossing
@@ -112,7 +112,7 @@ function [Rsteps,Lsteps] = footStepDetection(rightIMU, leftIMU, fs, options)
     end
 
   %show results 
-    if options.Showplots
+    if NamePairArguments.Showplots
         dt = 1/fs;
         t = (1:length(RpitchVelMov))'.*dt;
         figure
@@ -133,7 +133,7 @@ function [Rsteps,Lsteps] = footStepDetection(rightIMU, leftIMU, fs, options)
         plot(Rsteps.*dt, RpitchVel(Rsteps),'o')
         plot(Lsteps.*dt, LpitchVel(Lsteps),'o')
         legend('R','L')
-        title('Method: ' + options.Method)
+        title('Method: ' + NamePairArguments.Method)
         ylabel('Angular Velocity (deg/s)')
         xlabel('Time (s)')
         
