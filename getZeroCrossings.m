@@ -3,7 +3,7 @@
 %Date Created: 2022-07-13
 %Last Updated: 2022-07-13
 %
-%zeros = getZeroCrossings(signal)
+%zeros = getZeroCrossings(signal,type)
 %
 %Function to return all indexes where there is a zero crossing (whatever
 %side is closest to 0).

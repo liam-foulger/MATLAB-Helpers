@@ -13,12 +13,12 @@
 %
 %input units:
 % - accelerometer data (m/s^2)
-% - gyro data (rad/s)
+% - gyro data (deg/s)
 % - sensor sampling rate (Hz)
 % - weight of gyroscope data for comp filter (optional; default is 0.995 since best results found with that,
 %   but can be 0.95 to <1)
 % - NamePairArguments (optional):
-%    - 'RemoveOffset': 1 (true; default) or 0 (false). Remove the offset
+%    - 'RemoveOffset': 1 (true) or 0 (false; default). Remove the offset
 %    from the gyroscope before angle estimation. Ideally the offset should
 %    be removed (or determined to be removed post hoc) via a calibration 
 %    procedure before the data collection. 
@@ -34,7 +34,7 @@ function [IMUPitch, IMURoll] = complementaryFilter(accel, gyro,fs, weight, NameP
         gyro double
         fs double 
         weight (1,1) {mustBeNumeric} = 0.995
-        NamePairArguments.RemoveOffset (1,1) {mustBeNumeric} = 1
+        NamePairArguments.RemoveOffset (1,1) {mustBeNumeric} = 0
         NamePairArguments.Showplots (1,1) {mustBeNumeric} = 0
     end
    
@@ -134,7 +134,7 @@ function [pitchGyro,rollGyro] = convertGyro(gyro, options)
     end
        
     %need to switch sign of y angular velocity to get foward pitch: + 
-    pitchGyro = -pitch * 180/pi;
-    rollGyro = roll  * 180/pi;
+    pitchGyro = -pitch;
+    rollGyro = roll;
 
 end

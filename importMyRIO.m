@@ -23,6 +23,8 @@ S = dir(fullfile(D,'*'));
 N = setdiff({S.name},{'.','..'}) ;
 %resort N by minute #, not alphabetical
 
+N = {N{contains(N,'Minute')}};
+
 for ii = 1:numel(N)
     idx = sscanf(N{ii},'Minute_%d');
     N_sorted{idx} = N{ii};
