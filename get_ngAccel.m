@@ -15,8 +15,16 @@
 %Output: 
 % - accelerations in x and y directions without gravity (m/s^2)
 
-function [x_ng_accel, y_ng_accel] = get_ngAccel(accel, x_tilt, y_tilt,fs, cutoff)
-    
+function [x_ng_accel, y_ng_accel] = get_ngAccel(accel, x_tilt, y_tilt,fs, NamePairArguments)
+    arguments 
+        accel double
+        x_tilt double
+        y_tilt double
+        fs double 
+        NamePairArguments.FilterCutoff (1,:) {mustBeNumeric} = 0
+        NamePairArguments.FilterOrder (1,1) {mustBeNumeric} = 2
+        NamePairArguments.FilterType (1,1) string = "low"
+    end
     
     [x_grav, y_grav] = get_expected_g(x_tilt, y_tilt);
     

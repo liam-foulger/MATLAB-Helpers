@@ -9,7 +9,7 @@
 %as seen in general formula:
 %angle = (weight of gyro data)*(angle+gyrData*dt) + (1-weight)(accData)
 %
-%**assumes North(x)-East(y)-Down(z) Orientation of sensor data**
+%**assumes North/Forward(x)-East/Right(y)-Down(z) Orientation of sensor data**
 %
 %input units:
 % - accelerometer data (m/s^2)
@@ -24,6 +24,11 @@
 %    procedure before the data collection. 
 %    - 'Showplots': 1 (true) or 0 (false; default). True if you want to
 %    show the plots of the results
+%    - 'FilterCutoff': Cutoff for optional butterworth filter (Hz). Default is 0 (no filter
+%    applied).
+%    - 'FilterOrder': Order for optional butterworth filter. Default is 2.
+%    - 'FilterType':  Filter type for optional butterworth filter. Options
+%    are: 'low' (default), 'high','stop', or 'bandpass'
 %outputs:
 % - tilt in degrees (Roll and pitch)
 
@@ -36,6 +41,9 @@ function [IMUPitch, IMURoll] = complementaryFilter(accel, gyro,fs, weight, NameP
         weight (1,1) {mustBeNumeric} = 0.995
         NamePairArguments.RemoveOffset (1,1) {mustBeNumeric} = 0
         NamePairArguments.Showplots (1,1) {mustBeNumeric} = 0
+        NamePairArguments.FilterCutoff (1,:) {mustBeNumeric} = 0
+        NamePairArguments.FilterOrder (1,1) {mustBeNumeric} = 2
+        NamePairArguments.FilterType (1,1) string = "low"
     end
    
     %get predicted angle from accelerometer only
@@ -52,11 +60,11 @@ function [IMUPitch, IMURoll] = complementaryFilter(accel, gyro,fs, weight, NameP
     for jj = 2:length(rollGyro)
         totalAccel = abs(accel(jj,1)) + abs(accel(jj,2)) + abs(accel(jj,3));
         if totalAccel > 4.9 && totalAccel < 19.6    %this checks if there is too much acceleration (so you would ignore the accelerometer estimate)
-            pitch(jj) = (pitch(jj - 1) + pitchGyro(jj-1)/fs)*weight + pitchAccel(jj)*(1-weight);
-            roll(jj) = (roll(jj - 1) + rollGyro(jj-1)/fs)*weight + rollAccel(jj)*(1-weight);
+            pitch(jj) = (pitch(jj-1) + pitchGyro(jj-1)/fs)*weight + pitchAccel(jj)*(1-weight);
+            roll(jj) = (roll(jj-1) + rollGyro(jj-1)/fs)*weight + rollAccel(jj)*(1-weight);
         else
-            pitch(jj) = (pitch(jj - 1) + pitchGyro(jj-1)/fs);
-            roll(jj) = (roll(jj - 1) + rollGyro(jj-1)/fs);
+            pitch(jj) = (pitch(jj-1) + pitchGyro(jj-1)/fs);
+            roll(jj) = (roll(jj-1) + rollGyro(jj-1)/fs);
         end
     end
     
@@ -97,8 +105,15 @@ function [IMUPitch, IMURoll] = complementaryFilter(accel, gyro,fs, weight, NameP
         box off
     end
     
-    IMUPitch = pitch;
-    IMURoll = roll;
+    %apply filter if selected
+    if NamePairArguments.FilterCutoff > 0
+        [b,a] = butter(NamePairArguments.FilterOrder, NamePairArguments.FilterCutoff./(fs/2),NamePairArguments.FilterType);
+        IMUPitch = filtfilt(b,a,pitch);
+        IMURoll = filtfilt(b,a,roll);
+    else
+        IMUPitch = pitch;
+        IMURoll = roll;
+    end
 end
 
 function [pitchAccel, rollAccel] = getAccAngle(accel)
