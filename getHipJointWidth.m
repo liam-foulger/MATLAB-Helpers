@@ -1,9 +1,9 @@
 %File: getHJW.m
 %Author: Liam Foulger
-%Date created: 2021=06-15
-%Last updated: 2022-08-28
+%Date created: 2021-06-15
+%Last updated: 2022-09-05
 %
-%hipJointWidth = getHJW(pelvicDepth,pelvicWidth)
+%hipJointWidth = getHipJointWidth(pelvicDepth,pelvicWidth)
 %
 %Function to get the Hip Joint Width (HJW; distances between hip joint
 %centres)
@@ -17,7 +17,7 @@
 %Output (in same units in inputs):
 % - Hip Joint Width: distance between hip joints
 
-function hipJointWidth = getHJW(pelvicDepth,pelvicWidth)
+function hipJointWidth = getHipJointWidth(pelvicDepth,pelvicWidth)
     
     PD = pelvicDepth;
     PW = pelvicWidth;

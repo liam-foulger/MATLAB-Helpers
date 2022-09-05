@@ -28,7 +28,7 @@ function correctedAccel = correctAcceleration(accel, pitch, roll,fs, NamePairArg
         fs double 
         NamePairArguments.FilterCutoff (1,:) {mustBeNumeric} = 0
         NamePairArguments.FilterOrder (1,1) {mustBeNumeric} = 2
-        NamePairArguments.FilterType (1,1) string = "low"
+        NamePairArguments.FilterType (1,1) {mustBeMember(NamePairArguments.FilterType,{'low','high','stop','bandpass'})}  = "low"
     end
     
     [x_grav, y_grav] = get_expected_g(pitch, roll);
