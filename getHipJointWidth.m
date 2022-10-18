@@ -12,17 +12,17 @@
 %ASISs, so we multiply result by 2 to get the total distance between
 %Input:
 % - pelvicDepth: measured as distance between the inter-ASIS and
-% inter-PSIS lines
-% - pelvicWidth: measured as distance between left and right ASIS
-%Output (in same units in inputs):
-% - Hip Joint Width: distance between hip joints
+% inter-PSIS lines (meters)
+% - pelvicWidth: measured as distance between left and right ASIS (meters)
+%Output:
+% - Hip Joint Width: distance between hip joints (meters)
 
 function hipJointWidth = getHipJointWidth(pelvicDepth,pelvicWidth)
     
-    PD = pelvicDepth;
-    PW = pelvicWidth;
+    PD = pelvicDepth*1000;
+    PW = pelvicWidth*1000;
     
-    hipJointWidth =  2*(0.28*PD + 0.16*PW + 7.9);
+    hipJointWidth =  2*(0.28*PD + 0.16*PW + 7.9)/1000;
     
 
 end

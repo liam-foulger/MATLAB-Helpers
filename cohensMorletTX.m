@@ -27,10 +27,7 @@
 
 function [h,f,t] = cohensMorletTX(x,freqList,fwhmList,fs)
 
-% x = randn(1000,1)';  %input data
-% freqList = 1:20;
-% range_cycles = [ 4 10 ];
-% fs = 200; 
+
 x = x';
 pnts = length(x);
 

@@ -122,10 +122,11 @@ function [pitchAccel, rollAccel] = getAccAngle(accel)
     %assumes North(x)-East(y)-Down(z) Orientation of sensor data
 
     %pitch: forward: +
-    pitch = atan2d(accel(:,1), -accel(:,3));
+%     pitch = atan2d(accel(:,1), -accel(:,3));
+    pitch = atan2d(accel(:,1), sqrt(accel(:,3).^2 + accel(:,2).^2));
     %roll: right(east): +
-    roll = atan2d(accel(:,2), -accel(:,3));
-
+%     roll = atan2d(accel(:,2), -accel(:,3));
+    roll = atan2d(accel(:,2), sqrt(accel(:,3).^2 + accel(:,1).^2));
     pitchAccel = -pitch;
     rollAccel = -roll; 
 end

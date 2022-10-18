@@ -17,12 +17,17 @@
 %
 %Adapted from code by Anthony Chen
 
-function [rawData, trialName, calibrationData] = importMyRIO(calib)
+function [rawData, trialName, calibrationData] = importMyRIO(namePairArguments)
     arguments
-        calib string = "ignore"
-    end
+        namePairArguments.Path string = ""
+        namePairArguments.Calibration string = ""
 
-    selpath = uigetdir('','Get Trial Data'); %get folder with trial data
+    end
+    if isempty(namePairArguments.Path)
+        selpath = uigetdir('','Get Trial Data'); %get folder with trial data
+    else
+        selpath = namePairArguments.Path;
+    end
 
     D = char(selpath);
     S = dir(fullfile(D,'*'));
@@ -51,14 +56,14 @@ function [rawData, trialName, calibrationData] = importMyRIO(calib)
     calibFind = strfind(selpath,"\");
     trialName = selpath( (calibFind(end)+1):end );
     
-    if calib == "ignore"
+    if isempty(namePairArguments.Calibration)
         calibrationData = [];
     else
-        if calib == "getCalibration"
+        if namePairArguments.Calibration == "Get"
             [infiles, inpath] = uigetfile({'*calibration*','*.txt*'},'Get Calibration',selpath(1:(calibFind(end)-1))); %get .mat file with trial data
             file_path = fullfile(inpath, infiles);
         else
-            file_path = calib;
+            file_path = namePairArguments.Calibration;
         end
         calibrationData = readmatrix(file_path);
     end

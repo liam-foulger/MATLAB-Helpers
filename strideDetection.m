@@ -36,63 +36,107 @@
 % - removeDoubleSteps.m
 % - getZeroCrossings.m
 
-function strideIDXs = strideDetection(rightIMU, leftIMU, fs,options)
+function strideIDXs = strideDetection(rightIMU, leftIMU, fs,NamePairArguments)
     arguments
         rightIMU double
         leftIMU double
         fs double
-        options.Method (1,1) string = 'zero'
-        options.Events {mustBeMember(options.Events,['HS','HS&TO'])}= 'HS'
-        options.Showplots (1,1) {mustBeNumeric} = 0
-        options.MinPeakHeight (1,1) {mustBeNumeric} = 50
-        options.MinPeakProminence (1,1) {mustBeNumeric} = 100
+        NamePairArguments.HSmethod {mustBeMember(NamePairArguments.HSmethod,['GYzero','GYmin','NetAcc'])} = 'GYmin'
+        NamePairArguments.TOmethod {mustBeMember(NamePairArguments.TOmethod,['GYmin','NetAcc'])} = 'GYmin'
+        NamePairArguments.Events {mustBeMember(NamePairArguments.Events,['HS','HS&TO'])}= 'HS&TO'
+        NamePairArguments.Showplots (1,1) {mustBeNumeric} = 0
+        NamePairArguments.MinPeakHeight (1,1) {mustBeNumeric} = 50
+        NamePairArguments.MinPeakProminence (1,1) {mustBeNumeric} = 100
     end
-    if strcmp(options.Events,'HS&TO')
-        options.Method  = 'zero';
+    if strcmp(NamePairArguments.Events,'HS&TO')
+        NamePairArguments.Method  = 'zero';
     end
+    %filter IMU data @ 20Hz lowpass (4th order)
+    cutoff = 20;
+    [b,a] = butter(4, cutoff./(fs/2));
+    rightIMU = filtfilt(b,a,rightIMU);
+    leftIMU = filtfilt(b,a,leftIMU);
+    
     
     %for each IMU, find the HS
-    [rightHS,leftHS] = heelStrikeDetection(rightIMU, leftIMU, fs,'Method',options.Method,...
-        'Showplots',options.Showplots,'MinPeakHeight',options.MinPeakHeight,...
-        'MinPeakProminence',options.MinPeakProminence);
+    [rightHS,leftHS] = heelStrikeDetection(rightIMU, leftIMU, fs,'Method',NamePairArguments.HSmethod,...
+        'Showplots',NamePairArguments.Showplots,'MinPeakHeight',NamePairArguments.MinPeakHeight,...
+        'MinPeakProminence',NamePairArguments.MinPeakProminence);
     
     %plotting
-    if options.Showplots
-        numSteps = min([length(rightHS) length(leftHS)]);
+    if NamePairArguments.Showplots
+        numSteps = min([length(rightHS)-1 length(leftHS)]);
         figure
-        plot(rightHS(1:numSteps).*1/fs,(leftHS(1:numSteps) - rightHS(1:numSteps))/fs);
+        plot(rightHS(1:numSteps).*1/fs,(fs./(mean([leftHS(1:numSteps) - rightHS(1:numSteps)...
+            rightHS(2:(numSteps+1)) - leftHS(1:numSteps)],2) )).*60);
         xlabel('Time (s)')
-        ylabel('Step Duration (s)')
+        ylabel('Step Cadence (bpm)')
         box off
     end
     
     %find the TO between HS
-    if strcmp(options.Events,'HS&TO')
-        [rightTO,leftTO] = toeOffDetection(rightIMU,leftIMU,rightHS,leftHS);
-        if options.Showplots
-            t = (1:length(rightIMU))'./fs;
+    if strcmp(NamePairArguments.Events,'HS&TO')
+        [rightTO,leftTO] = toeOffDetection(rightIMU,leftIMU,rightHS,leftHS,'Method',NamePairArguments.TOmethod);
+        if NamePairArguments.Showplots
+            switch NamePairArguments.HSmethod
+                case {'GYzero','GYmin'}
+                    varR = rightIMU(:,5);
+                    varL = leftIMU(:,5);
+                    yLab = 'Angular Velocity (deg/s)';
+                case 'NetAcc'
+                    varR = vecnorm(rightIMU(:,1:3),2,2);
+                    varL = vecnorm(leftIMU(:,1:3),2,2);
+                    yLab = 'Linear Acceleration (m/s^2)';
+            end
+            t = (1:length(varR))'./fs;
             figure
-            plot(t,rightIMU(:,5),'r')
+            plot(t,varR,'r')
             hold on
-            plot(t,leftIMU(:,5),'b')
-            plot(rightHS./fs, rightIMU(rightHS,5),'Marker','o','MarkerEdgeColor','r','LineStyle','none')
-            plot(leftHS./fs, leftIMU(leftHS,5),'Marker','o','MarkerEdgeColor','b','LineStyle','none')
-            plot(rightTO./fs, rightIMU(rightTO,5),'Marker','*','MarkerEdgeColor','r','LineStyle','none')
-            plot(leftTO./fs, leftIMU(leftTO,5),'Marker','*','MarkerEdgeColor','b','LineStyle','none')
-            legend('R','L')
+            plot(t,varL,'b')
+            plot(rightHS./fs, varR(rightHS),'Marker','o','MarkerEdgeColor','r','LineStyle','none')
+            plot(rightTO./fs, varR(rightTO),'Marker','*','MarkerEdgeColor','r','LineStyle','none')
+            plot(leftHS./fs, varL(leftHS),'Marker','o','MarkerEdgeColor','b','LineStyle','none')
+            plot(leftTO./fs, varL(leftTO),'Marker','*','MarkerEdgeColor','b','LineStyle','none')
+            legend('R','L','HS','TO')
             title('Heel Strikes & Toe-Offs')
-            ylabel('Angular Velocity (deg/s)')
+            ylabel(yLab)
             xlabel('Time (s)')
         end
     end
     
     %reorganize to give output that is nicely sorted
     numStrides = min([length(rightHS)-1 length(leftHS)]);
-    if strcmp(options.Events,'HS&TO')
+    if strcmp(NamePairArguments.Events,'HS&TO')
         strideIDXs = [rightHS(1:numStrides)'; leftTO(1:numStrides)'; leftHS(1:numStrides)';...
             rightTO(1:numStrides)'; (rightHS(2:numStrides+1)' - 1)];
     else
         strideIDXs = [rightHS(1:numStrides)';leftHS(1:numStrides)'; (rightHS(2:numStrides+1)' - 1)];
+    end
+    
+    %make adjustments given Mariani et al(2013) 
+    switch NamePairArguments.Events
+        case 'HS&TO'
+            switch NamePairArguments.HSmethod
+                case 'GYzero'
+                    strideIDXs([1 3 5],:) = strideIDXs([1 3 5],:) + round( 0.039*fs);
+                case 'GYmin'
+                     strideIDXs([1 3 5],:) = strideIDXs([1 3 5],:) - round( 0.029*fs);             
+                case 'NetAcc'
+                    strideIDXs([1 3 5],:) = strideIDXs([1 3 5],:) - round( 0.001*fs);
+            end
+            switch NamePairArguments.TOmethod
+                case 'GYmin'
+                    strideIDXs([2 4],:) = strideIDXs([2 4],:) + round( 0.033*fs);
+                case 'NetAcc'
+                    strideIDXs([2 4],:) = strideIDXs([2 4],:) + round( 0.003*fs);
+            end
+        case 'TO'
+            case 'GYzero'
+                    strideIDXs = strideIDXs + round( 0.039*fs);
+            case 'GYmin'
+                 strideIDXs = strideIDXs - round( 0.029*fs);             
+            case 'NetAcc'
+                strideIDXs = strideIDXs - round( 0.001*fs);
     end
 end
 
@@ -107,12 +151,13 @@ end
 % using the angular velocity peaks (see Jasiewicz et al. (2006) for more
 % info
 
-function [rightTO,leftTO] = toeOffDetection(rightIMU,leftIMU,rightHS,leftHS)
+function [rightTO,leftTO] = toeOffDetection(rightIMU,leftIMU,rightHS,leftHS,NamePairArguments)
     arguments
         rightIMU double
         leftIMU double
         rightHS double
         leftHS double
+        NamePairArguments.Method {mustBeMember(NamePairArguments.Method,['GYmin','NetAcc'])} = 'NetAcc'
     end
     numStrides = min([length(rightHS)-1 length(leftHS)]);
     
@@ -121,14 +166,37 @@ function [rightTO,leftTO] = toeOffDetection(rightIMU,leftIMU,rightHS,leftHS)
     RpitchVel = detrend(rightIMU(:,5));
     LpitchVel = detrend(leftIMU(:,5));
     
-    for ii = 1:numStrides
-        %find min value between right HS and left HS to find left TO
-        [~,loc] = min(LpitchVel( rightHS(ii):leftHS(ii) ) );
-        leftTO(ii) = loc + rightHS(ii) - 1;
-        
-        %find min value between left HS and next right HS to find right TO
-        [~,loc] = min(RpitchVel( leftHS(ii):rightHS(ii+1) ) );
-        rightTO(ii) = loc + leftHS(ii) - 1;
+    
+    switch NamePairArguments.Method
+        case 'GYmin'
+            for ii = 1:numStrides
+                %find gyro zero crossing (rising) between TO
+                idx = getZeroCrossings(LpitchVel(rightHS(ii):leftHS(ii)),'up');
+                
+                %find min value between right HS and left HS to find left TO
+                [~,loc] = min(LpitchVel( rightHS(ii):rightHS(ii)+idx(1) ) );
+                leftTO(ii) = loc + rightHS(ii) - 1;
+                
+                %find gyro zero crossing (rising) between TO
+                idx = getZeroCrossings(RpitchVel(leftHS(ii):rightHS(ii+1)),'up');
+                %find min value between left HS and next right HS to find right TO
+                [~,loc] = min(RpitchVel( leftHS(ii):leftHS(ii)+idx ) );
+                rightTO(ii) = loc + leftHS(ii) - 1;
+            end
+        case 'NetAcc'
+            RnetAcc = vecnorm(rightIMU(:,1:3),2,2);
+            LnetAcc = vecnorm(leftIMU(:,1:3),2,2);
+            for ii = 1:numStrides
+                %find min value between right HS and left HS to find left TO
+                [~,loc] = max(LnetAcc( rightHS(ii):leftHS(ii) ) );
+                leftTO(ii) = loc + rightHS(ii) - 1;
+
+                %find min value between left HS and next right HS to find right TO
+                [~,loc] = max(RnetAcc( leftHS(ii):rightHS(ii+1) ) );
+                rightTO(ii) = loc + leftHS(ii) - 1;
+            end
+            
+            
     end
     
 end
@@ -180,7 +248,7 @@ function [rightHS,leftHS] = heelStrikeDetection(rightIMU, leftIMU, fs, NamePairA
         rightIMU double
         leftIMU double
         fs double
-        NamePairArguments.Method (1,1) string = 'zero'
+        NamePairArguments.Method {mustBeMember(NamePairArguments.Method,['GYzero','GYmin','NetAcc'])} = 'NetAcc'
         NamePairArguments.Showplots (1,1) {mustBeNumeric} = 0
         NamePairArguments.MinPeakHeight (1,1) {mustBeNumeric} = 50
         NamePairArguments.MinPeakProminence (1,1) {mustBeNumeric} = 100
@@ -212,7 +280,7 @@ function [rightHS,leftHS] = heelStrikeDetection(rightIMU, leftIMU, fs, NamePairA
     
     %find final index depending on method
     switch NamePairArguments.Method
-        case 'zero'
+        case 'GYzero'
             
             %find next zero crossing
             for ii = 1:numSteps
@@ -228,19 +296,56 @@ function [rightHS,leftHS] = heelStrikeDetection(rightIMU, leftIMU, fs, NamePairA
                 idx = getZeroCrossings(LpitchVel((LfiltMax2(ii)):(LfiltMax2(ii)+searchRange)),'down');
                 leftHS(ii) = LfiltMax2(ii) - 1 + idx(1);
             end
-        case 'peak'
+        case 'GYmin'
             for ii = 1:numSteps
-                searchRange = movRange*2;
-                [~, idx] = max( RpitchVel((RfiltMax2(ii)-searchRange):(RfiltMax2(ii)+searchRange)) );
-                rightHS(ii) = RfiltMax2(ii) -searchRange - 1 + idx;
-
-                [~, idx] = max( LpitchVel((LfiltMax2(ii)-searchRange):(LfiltMax2(ii)+searchRange)) );
-                leftHS(ii) = LfiltMax2(ii) -searchRange - 1 + idx;
+                
+                [~,searchRange] = min(LpitchVel(RfiltMax2(ii):LfiltMax2(ii)) );
+                [~,idx] = min(RpitchVel(RfiltMax2(ii):(RfiltMax2(ii)+searchRange-round(fs/20))) );
+                rightHS(ii) = RfiltMax2(ii) - 1 + idx;
+                
+                [~,searchRange] = min(LpitchVel(LfiltMax2(ii):RfiltMax2(ii+1)) );
+                [~,idx] = min(LpitchVel(LfiltMax2(ii):(LfiltMax2(ii)+searchRange-round(fs/20))) );
+                leftHS(ii) = LfiltMax2(ii)  - 1 + idx;
+                
             end
+        case 'NetAcc'
+            RnetAcc = vecnorm(rightIMU(:,1:3),2,2);
+            LnetAcc = vecnorm(leftIMU(:,1:3),2,2);
+            rightZero = NaN(numSteps,1);
+            leftZero = NaN(numSteps,1);
+            %find gyro zero crossing
+            for ii = 1:numSteps
+                searchRange = min([length( RfiltMax2(ii):(RfiltMax2(ii)+(fs)) )...
+                                    length( RfiltMax2(ii):RfiltMax2(end) )...
+                                    ]);
+                idx = getZeroCrossings(RpitchVel((RfiltMax2(ii)):(RfiltMax2(ii)+searchRange)),'down');
+                rightZero(ii) = RfiltMax2(ii) - 1 + idx(1);
+                
+                searchRange = min([length( LfiltMax2(ii):(LfiltMax2(ii)+(fs)) ) ...
+                                    length( LfiltMax2(ii):LfiltMax2(end) )...
+                                    ]);
+                idx = getZeroCrossings(LpitchVel((LfiltMax2(ii)):(LfiltMax2(ii)+searchRange)),'down');
+                leftZero(ii) = LfiltMax2(ii) - 1 + idx(1);
+            end
+            
+            for ii = 1:numSteps
+                %find norm accel peak between gyro zero crossing and next
+                %gyro peak
+                [~,RsearchRange] = max(RnetAcc((rightZero(ii)):LfiltMax2(ii)));
+                [~,LsearchRange] = max(LnetAcc((leftZero(ii)):RfiltMax2(ii+1)));
+                %search between gyro peak and norm accel peak for norm
+                %accel min
+                [~, idx] = min( RnetAcc((rightZero(ii)):(rightZero(ii)+RsearchRange)) );
+                rightHS(ii) = rightZero(ii) - 1 + idx;
+                
+                [~, idx] = min( LnetAcc((leftZero(ii)):(leftZero(ii)+LsearchRange)) );
+                leftHS(ii) = leftZero(ii)  - 1 + idx;
+            end
+            
     end
     
     %remove duplicates
-    [rightHS, leftHS] = removeDoubleSteps(rightHS,-abs(RpitchVel),leftHS,-abs(LpitchVel));
+%     [rightHS, leftHS] = removeDoubleSteps(rightHS,-abs(RpitchVel),leftHS,-abs(LpitchVel));
 
     %make sure first step is R
     if leftHS(1) < rightHS(1)
@@ -261,18 +366,31 @@ function [rightHS,leftHS] = heelStrikeDetection(rightIMU, leftIMU, fs, NamePairA
         title('Filtered Peak Detection')
         ylabel('Filtered Angular Velocity (deg/s)')
         xlabel('Time (s)')
-
-        figure
-        plot(t,RpitchVel,'r')
-        hold on
-        plot(t,LpitchVel,'b')
-        plot(rightHS.*dt, RpitchVel(rightHS),'Marker','o','MarkerEdgeColor','r','LineStyle','none')
-        plot(leftHS.*dt, LpitchVel(leftHS),'Marker','o','MarkerEdgeColor','b','LineStyle','none')
-        legend('R','L')
-        title('Method: ' + NamePairArguments.Method)
-        ylabel('Angular Velocity (deg/s)')
-        xlabel('Time (s)')
         
+        if strcmp('NetAcc',NamePairArguments.Method)
+            figure
+            plot(t,RnetAcc,'r')
+            hold on
+            plot(t,LnetAcc,'b')
+            plot(rightHS.*dt, RnetAcc(rightHS),'Marker','o','MarkerEdgeColor','r','LineStyle','none')
+            plot(leftHS.*dt, LnetAcc(leftHS),'Marker','o','MarkerEdgeColor','b','LineStyle','none')
+            legend('R','L')
+            title(['Method: ' NamePairArguments.Method])
+            ylabel('Linear Acceleration')
+            xlabel('Time (s)')
+            
+        else
+            figure
+            plot(t,RpitchVel,'r')
+            hold on
+            plot(t,LpitchVel,'b')
+            plot(rightHS.*dt, RpitchVel(rightHS),'Marker','o','MarkerEdgeColor','r','LineStyle','none')
+            plot(leftHS.*dt, LpitchVel(leftHS),'Marker','o','MarkerEdgeColor','b','LineStyle','none')
+            legend('R','L')
+            title(['Method: ' NamePairArguments.Method])
+            ylabel('Angular Velocity (deg/s)')
+            xlabel('Time (s)')
+        end
     end
     
 end
