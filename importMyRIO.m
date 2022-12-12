@@ -23,7 +23,7 @@ function [rawData, trialName, calibrationData] = importMyRIO(namePairArguments)
         namePairArguments.Calibration string = ""
 
     end
-    if isempty(namePairArguments.Path)
+    if strcmp(namePairArguments.Path,"")
         selpath = uigetdir('','Get Trial Data'); %get folder with trial data
     else
         selpath = namePairArguments.Path;
@@ -56,7 +56,7 @@ function [rawData, trialName, calibrationData] = importMyRIO(namePairArguments)
     calibFind = strfind(selpath,"\");
     trialName = selpath( (calibFind(end)+1):end );
     
-    if isempty(namePairArguments.Calibration)
+    if strcmp(namePairArguments.Calibration,"")
         calibrationData = [];
     else
         if namePairArguments.Calibration == "Get"

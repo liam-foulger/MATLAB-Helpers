@@ -36,13 +36,17 @@ function correctedAccel = correctAcceleration(accel, pitch, roll,fs, NamePairArg
     ng_x = ((accel(:,1) - x_grav(:,1)).*cosd(pitch)) -((accel(:,3) - x_grav(:,2)).*sind(pitch));
     ng_y = ((accel(:,2) - y_grav(:,1)).*cosd(roll)) -((accel(:,3) - y_grav(:,2)).*sind(roll));
     
+    
+    
     if NamePairArguments.FilterCutoff > 0
         [b,a] = butter(NamePairArguments.FilterOrder, NamePairArguments.FilterCutoff./(fs/2),NamePairArguments.FilterType);
         correctedAccel(:,1) = filtfilt(b,a, ng_x);
         correctedAccel(:,2) = filtfilt(b,a, ng_y); 
+%         correctedAccel(:,3) = filtfilt(b,a, ng_z); 
     else
         correctedAccel(:,1) = ng_x;
         correctedAccel(:,2) = ng_y; 
+%         correctedAccel(:,3) = ng_z; 
     end
 end
 

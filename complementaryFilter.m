@@ -30,7 +30,7 @@
 %    - 'FilterType':  Filter type for optional butterworth filter. Options
 %    are: 'low' (default), 'high','stop', or 'bandpass'
 %outputs:
-% - tilt in degrees (Roll and pitch)
+% - tilt in degrees: Pitch (around Y axis) & Roll (around X axis)
 
 function [IMUPitch, IMURoll] = complementaryFilter(accel, gyro,fs, weight, NamePairArguments)
 
@@ -49,7 +49,7 @@ function [IMUPitch, IMURoll] = complementaryFilter(accel, gyro,fs, weight, NameP
     %get predicted angle from accelerometer only
     [pitchAccel, rollAccel] = getAccAngle(accel);
     
-    %converts gyro to deg/s and removes offset (if selected)
+    %removes gyro offset (if selected) & switches sign 
     [pitchGyro,rollGyro] = convertGyro(gyro, NamePairArguments);
     
     %step-by-step complimentary filter 
@@ -127,7 +127,7 @@ function [pitchAccel, rollAccel] = getAccAngle(accel)
     %roll: right(east): +
 %     roll = atan2d(accel(:,2), -accel(:,3));
     roll = atan2d(accel(:,2), sqrt(accel(:,3).^2 + accel(:,1).^2));
-    pitchAccel = -pitch;
+    pitchAccel = pitch;
     rollAccel = -roll; 
 end
 
@@ -150,7 +150,7 @@ function [pitchGyro,rollGyro] = convertGyro(gyro, options)
     end
        
     %need to switch sign of y angular velocity to get foward pitch: + 
-    pitchGyro = -pitch;
+    pitchGyro = pitch;
     rollGyro = roll;
 
 end

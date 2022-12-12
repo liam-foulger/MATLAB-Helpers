@@ -16,15 +16,29 @@
 % - calibrated data (same order as input) in N or Nm. (n x 6)
 
 function FP = FP8032(rawData,fs,cutoff)
-    
-    cut=cutoff/(fs*0.5);
-    [B,A]=butter(2,cut);
-    Fx =  filtfilt(B,A,rawData(:,1));
-    Fy =  filtfilt(B,A,rawData(:,2));
-    Fz =  filtfilt(B,A,rawData(:,3));
-    Mx =  filtfilt(B,A,rawData(:,4));
-    My =  filtfilt(B,A,rawData(:,5));
-    Mz =  filtfilt(B,A,rawData(:,6));
+    arguments
+        rawData double
+        fs (1,1) {mustBeNumeric} = 100
+        cutoff (1,1) {mustBeNumeric} = 0
+    end
+      
+    if cutoff > 0 
+        cut=cutoff/(fs*0.5);
+        [B,A]=butter(2,cut);
+        Fx =  filtfilt(B,A,rawData(:,1));
+        Fy =  filtfilt(B,A,rawData(:,2));
+        Fz =  filtfilt(B,A,rawData(:,3));
+        Mx =  filtfilt(B,A,rawData(:,4));
+        My =  filtfilt(B,A,rawData(:,5));
+        Mz =  filtfilt(B,A,rawData(:,6));
+    else
+        Fx =  rawData(:,1);
+        Fy =  rawData(:,2);
+        Fz =  rawData(:,3);
+        Mx =  rawData(:,4);
+        My =  rawData(:,5);
+        Mz =  rawData(:,6);
+    end
 
     SensitivityMatrix = ...
     [0.6665886 -0.0046187 -0.0015756 0.0041294 -0.0032712 0.006524745;...
@@ -47,7 +61,7 @@ function FP = FP8032(rawData,fs,cutoff)
 
     %Offsets when no material covering forceplate (in meters)
     %From AMTI manual (yellow pages)
-    % zoff = -1.629; yoff = -0.024; xoff = 0.017;
+%     zoff = -1.629; yoff = -0.024; xoff = 0.017;
     zoff = -0.0413766; yoff = -0.0006096; xoff = 0.0004318;
 
 
