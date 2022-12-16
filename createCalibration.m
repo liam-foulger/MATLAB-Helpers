@@ -1,7 +1,7 @@
 %File: createCalibration.m
 %Author: Liam Foulger 
-%Date Created: 20-07-2022
-%Last Updated: 18-10-2022
+%Date Created: 2022-07-20
+%Last Updated: 2022-12-13
 %
 % Function to create a 3x3 calibration matrix for an IMU based on 2 static
 % poses.
@@ -13,8 +13,8 @@
 % Units can be in m/s^2 or g's, since it is normalized either way
 % 
 % Inputs: 
-% - Ori1: Accelerometer XYZ (1x3) in pose 1  *check array dimensions
-% - Ori2: Accelerometer XYZ (1x3) in pose 2
+% - Ori1: Mean accelerometer XYZ (1x3) in pose 1 
+% - Ori2: Mean accelerometer XYZ (1x3) in pose 2
 % Output:
 % - R: 3x3 calibration matrix
 %
@@ -22,15 +22,18 @@
 
 function R = createCalibration(ori1,ori2)
     %normalize vectors
-    ori1_norm = ori1/sqrt(sum(ori1.^2)); 
-    ori2_norm = ori2/sqrt(sum(ori2.^2)); 
-    %get Y axis from cross product of estimated X and true Z axis
-    new_third_axis = cross(ori1_norm, ori2_norm); 
-    new_third_axis = new_third_axis ./ norm(new_third_axis); 
+    ori1_norm = ori1/sqrt(sum(ori1.^2)); %true Z axis (flipped)
+    ori2_norm = ori2/sqrt(sum(ori2.^2)); %estimated X axis
+    %get true Z axis as negative (pointing down) of orientation 1
+    true_Z_axis = -ori1_norm;
+    %get true Y axis from cross product of estimated X and true Z axis
+    true_Y_axis = cross(ori2_norm,true_Z_axis); 
+    true_Y_axis = true_Y_axis ./ norm(true_Y_axis); 
     %get true X axis from computed Y and true Z axis
-    new_second_axis = cross(    ori1_norm,new_third_axis );
-    new_second_axis = new_second_axis ./ norm(new_second_axis); 
+    true_X_axis = cross(true_Y_axis,true_Z_axis);
+    true_X_axis = true_X_axis ./ norm(true_X_axis); 
+    
     %create matrix
-    R = real([ new_second_axis', new_third_axis', -ori1_norm' ] );
+    R = real([ true_X_axis', true_Y_axis', true_Z_axis' ] );
 
 end

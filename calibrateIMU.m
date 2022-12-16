@@ -1,20 +1,29 @@
 %File: calibrateIMU.m
 %Author: Liam Foulger
 %Date Created: 2022-06-01
-%Last Updated: 2022-12-01
+%Last Updated: 2022-12-13
 %
 %IMUcalibrated = calibrateIMU(IMUuc, R, accOffset, gyrOffset,fs,cutoff,NamePairArguments)
 %
-%Function to remove the gyroscope offsets apply a calibration rotation
-%matrix to IMU data
+%Function to apply a calibration rotation matrix to IMU data & remove
+%offsets (if applicable). Also can lowpass filter the data.
 %
 %Inputs:
-%-IMUuc: uncalibrated IMU data (n x 6), XYZ acceleration and XYZ gyroscope
+%-IMUuc: uncalibrated IMU data (n x 6), XYZ acceleration (g or m/s^2) and XYZ gyroscope (rad/s or deg/s)
 %-R: 3x3 rotation calibration matrix
-%-accOffset: accelerometer offset (1x3).
-%-gyrOffset: gyroscope offset (1x3).
+%-accOffset: accelerometer offset (1x3). Must be same units as inputted IMU
+%data (g or m/s^2). If not inputted, no offset is removed.
+%-gyrOffset: gyroscope offset (1x3). Must be same units as inputted IMU
+%data (rad/s or deg/s). If not inputted, no offset is removed.
+%-fs: sampling rate of data (Hz). Only need to include if you want to
+%filter.
+%-cutoff: lowpass filter cutoff frequency (Hz). Only need to include if you want to
+%filter.
+%NamePairArguments:
+%-'OffsetOrder': when the offsets are removed from the data. Either
+%'before' the calibration, 'after' the calibration', or 'none' are removed.
 %Outputs: 
-%-IMUcalibrated: calibrated IMU data (n x 6)
+%-IMUcalibrated: calibrated IMU data (n x 6), XYZ acceleration (g or m/s^2) and XYZ gyroscope (rad/s or deg/s)
 
 function IMUcalibrated = calibrateIMU(IMUuc, R, accOffset, gyrOffset,fs,cutoff,NamePairArguments)
 
@@ -28,11 +37,7 @@ function IMUcalibrated = calibrateIMU(IMUuc, R, accOffset, gyrOffset,fs,cutoff,N
         NamePairArguments.offsetOrder{mustBeMember(NamePairArguments.offsetOrder,['before','after','none'])} = 'before'
     end
     
-    if cutoff > 0
-        cut=cutoff/(fs*0.5);
-        [b,a]=butter(4,cut);
-        IMUuc = filtfilt(b,a,IMUuc);
-    end
+    
     
     if strcmp(NamePairArguments.offsetOrder,'before')
         IMUuc(:,1:3) = IMUuc(:,1:3) + accOffset;
@@ -50,5 +55,9 @@ function IMUcalibrated = calibrateIMU(IMUuc, R, accOffset, gyrOffset,fs,cutoff,N
         IMUcalibrated(:,1:3) = IMUcalibrated(:,1:3) + accOffset;
         IMUcalibrated(:,4:6) = IMUcalibrated(:,4:6) - gyrOffset;
     end
-
+    
+    if cutoff > 0
+        [b,a]=butter(4,cutoff/(fs*0.5));
+        IMUcalibrated = filtfilt(b,a,IMUcalibrated);
+    end
 end
