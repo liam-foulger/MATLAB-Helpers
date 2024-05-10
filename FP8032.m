@@ -1,17 +1,17 @@
 %File: FP8032.m
 %Author: Liam Foulger
 %Date Created: 2022-01-10
-%Last Updated: 2022-07-11
+%Last Updated: 2022-12-16
 %
-%[fxfinal,fyfinal,fzfinal,mxfinal,myfinal,mzfinal] = FP8032(rawData,fs,cutoff)
+% FP = FP8032(rawData,fs,cutoff)
 %
 %Function to convert raw (V) data from force plateform to calibrated forces
 %(N) & moments (Nm) for AMTI OR6-7 "8032" (Note that the calibration matrix
 %is specific for this device ONLY)
 %Input:
 % - raw data (1-3: Fx,Fy,Fz; 4-6: Mx,My,Mz; all in V). Must be as n x 6 matrix. 
-% - sample rate (Hz)
-% - lowpass filter cutoff (Hz)
+% - sample rate (Hz) - optional: only needed if filtering
+% - lowpass filter cutoff (Hz) - optional
 %Output:
 % - calibrated data (same order as input) in N or Nm. (n x 6)
 

@@ -21,12 +21,11 @@
 %filter.
 %NamePairArguments:
 %-'OffsetOrder': when the offsets are removed from the data. Either
-%'before' the calibration, 'after' the calibration', or 'none' are removed.
+%'before' the calibration (default), 'after' the calibration', or 'none' are removed.
 %Outputs: 
 %-IMUcalibrated: calibrated IMU data (n x 6), XYZ acceleration (g or m/s^2) and XYZ gyroscope (rad/s or deg/s)
 
 function IMUcalibrated = calibrateIMU(IMUuc, R, accOffset, gyrOffset,fs,cutoff,NamePairArguments)
-
     arguments
         IMUuc double
         R double
@@ -37,13 +36,13 @@ function IMUcalibrated = calibrateIMU(IMUuc, R, accOffset, gyrOffset,fs,cutoff,N
         NamePairArguments.offsetOrder{mustBeMember(NamePairArguments.offsetOrder,['before','after','none'])} = 'before'
     end
     
-    
-    
+    % remove offset, if it was taken before the calibration
     if strcmp(NamePairArguments.offsetOrder,'before')
         IMUuc(:,1:3) = IMUuc(:,1:3) + accOffset;
         IMUuc(:,4:6) = IMUuc(:,4:6) - gyrOffset;
     end
     
+    % IMU calibration step: 
     IMUcalibrated = [R(1,1).*IMUuc(:,1) + R(2,1).*IMUuc(:,2) + R(3,1).*IMUuc(:,3)...
         R(1,2).*IMUuc(:,1) + R(2,2).*IMUuc(:,2) + R(3,2).*IMUuc(:,3)...
         R(1,3).*IMUuc(:,1) + R(2,3).*IMUuc(:,2) + R(3,3).*IMUuc(:,3)...
@@ -51,11 +50,13 @@ function IMUcalibrated = calibrateIMU(IMUuc, R, accOffset, gyrOffset,fs,cutoff,N
         R(1,2).*IMUuc(:,4) + R(2,2).*IMUuc(:,5) + R(3,2).*IMUuc(:,6)...
         R(1,3).*IMUuc(:,4) + R(2,3).*IMUuc(:,5) + R(3,3).*IMUuc(:,6)];
     
+    % remove offset, if it was taken after the calibration
     if strcmp(NamePairArguments.offsetOrder,'after')
         IMUcalibrated(:,1:3) = IMUcalibrated(:,1:3) + accOffset;
         IMUcalibrated(:,4:6) = IMUcalibrated(:,4:6) - gyrOffset;
     end
     
+    % apply filter 
     if cutoff > 0
         [b,a]=butter(4,cutoff/(fs*0.5));
         IMUcalibrated = filtfilt(b,a,IMUcalibrated);

@@ -1,9 +1,10 @@
 %File: getCoherence.m
 %Author: Liam Foulger
 %Date Created: 2022-05-01
-%Last Updated: 2022-07-12
+%Last Updated: 2024-05-02
 %
-%[f, coherence, gain] = getCoherence(input, output, windowLength, fs)
+% [f, coherence, gain, phase, inputPower, outputPower,...
+% allCross,allInput,allOutput] = getCoherence(input, output, windowLength, fs,NamePairArguments)
 %
 %Function to calculate the coherence (& gain) between two signals
 % coherence = |Pxy|^2 / Pxx*Pyy
@@ -11,16 +12,24 @@
 %(Note I've validated that this works correctly with Neurospec 2.0)
 %
 %Inputs:
-% - input signal (n x 1)
-% - output signal (n x 1)
+% - input signal (nm x 1 OR n x m) (n = number of samples in window, m is
+% number of windows)
+% - output signal (nm x 1 OR n x m)
 % - length of window for fft analysis (s)
 % - signal sample rate (Hz)
+% - NamePairArguments:
+%   - 'padding': number of zeros added to each end of segments
+%   - 'window': type of windowing done on segment: 'square' (default),
+%   'hanning', & 'hamming'
 %Outputs: 
-% - f: array of frequencies
-% - coherence between input and output
-% - gain between input and output
+% - f: array of the frequencies (n/2+1, 1)
+% - coherence between input and output (R^2) (n/2+1, 1)
+% - gain between input and output (n/2+1, 1)
+% - phase between input and output (n/2+1, 1)
+% - input signal power spectra (n/2+1, 1)
+% - output signal power spectra (n/2+1, 1) 
 
-function [f, coherence, gain] = getCoherence(input, output, windowLength, fs,NamePairArguments)
+function [f, coherence, gain, phase, inputPower, outputPower,allCross,allInput,allOutput] = getCoherence(input, output, windowLength, fs,NamePairArguments)
     
     arguments 
         input double
@@ -76,23 +85,30 @@ function [f, coherence, gain] = getCoherence(input, output, windowLength, fs,Nam
     outputFFT = fft(outputR);
     
     %calculate auto and cross spectra
-    autoInput = inputFFT.*conj(inputFFT);
-    autoOutput = outputFFT.*conj(outputFFT);
-    crossAB = inputFFT.*conj(outputFFT);
+    autoInput = (inputFFT.*conj(inputFFT));
+    autoOutput = (outputFFT.*conj(outputFFT));
+    crossAB = (outputFFT.*conj(inputFFT));
     
     %sum across windows to get total 
-    allCross = sum(crossAB,2);
-    allInput = sum(autoInput,2);
-    allOutput = sum(autoOutput,2);
+    allCross = sum(crossAB(1:N/2+1,:),2);
+    allInput = sum(autoInput(1:N/2+1,:),2);
+    allOutput = sum(autoOutput(1:N/2+1,:),2);
     
-    f = linspace(0,fs/2,N/2 + 1);
+    f = linspace(0,fs/2,N/2 + 1)';
 
     %calculate coherence
-    coherence = ((abs(allCross).^2)./(allInput.*allOutput))';
-    coherence = coherence(1:N/2+1);
+    coherence = ((abs(allCross).^2)./(allInput.*allOutput));
     
     %calculate gain
     gain = abs(allCross./allInput);
-    gain = gain(1:N/2+1);
     
+    %calculate phase
+    phase = unwrap(atan2(imag(allCross),real(allCross)),pi/2);
+%     phase = unwrap(angle(allCross));
+    
+    %get input & output Power Spectra
+    inputPower = mean(autoInput,2)./N;
+    inputPower = inputPower(1:N/2+1);
+    outputPower = mean(autoOutput,2)./N;
+    outputPower = outputPower(1:N/2+1);
 end

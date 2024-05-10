@@ -1,7 +1,7 @@
 %File: getZeroCrossings.m
 %Author: Liam Foulger
 %Date Created: 2022-07-13
-%Last Updated: 2022-07-13
+%Last Updated: 2022-12-17
 %
 %zeros = getZeroCrossings(signal,type)
 %
@@ -9,11 +9,16 @@
 %side is closest to 0).
 %Input:
 % - signal
-% - type of crossing: 'up' (- to +), 'down' (+ to -), 'all'
+% - type of crossing: 'up' (- to +), 'down' (+ to -), 'all' (DEFAULT)
 %Output:
 % - zero crossing indexes
 
 function zeros = getZeroCrossings(signal,type)
+    arguments 
+        signal double
+        type {mustBeMember(type,{'up','down','all'})} = 'all'
+    end
+       
     zeros = [];
     positive = signal(1) > 0;
     

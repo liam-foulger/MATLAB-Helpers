@@ -1,7 +1,7 @@
 %File: cohensMorletTX.m
 %Author: Liam Foulger
 %Date Created: 2022-05-22
-%Last Updated: 2022-06-30
+%Last Updated: 2024-02-05
 %
 %[h,f,t] = cohensMorletTX(x,freqList,fwhmList,fs)
 %
@@ -14,19 +14,18 @@
 %
 %Inputs:
 %x: data array (n x 1)
-%freqList: array of frequencies you want to analyze (m x 1)
+%freqList: array of frequencies you want to analyze (m x 1) (Hz)
 %fwhmList: array of full widths at half maximum that correspond to each
 %element in the frequency list. Note that they shouldn't be shorter than
 %1/f and increasing the width will decrease time resolution but increase
-%frequence resolution. Read the paper for more info. (m x 1)
+%frequence resolution. Read the paper for more info. (m x 1) (seconds)
 %fs: sampling rate of data
 %Outputs:
-%-h: data matrix (n x m)*(check this)
-%-f: frequencies (Hz)
-%-t: time points (s)
+%-h: data matrix (m x n)
+%-f: frequencies (m x 1) (Hz) AKA the freqList you input
+%-t: time points (s) 
 
 function [h,f,t] = cohensMorletTX(x,freqList,fwhmList,fs)
-
 
 x = x';
 pnts = length(x);
@@ -46,8 +45,7 @@ h = zeros(length(frex),pnts);
 % spectrum of data
 dataX = fft(x,nConv);
 
-
-
+% loop through each specified frequency
 for fi=1:length(frex)
     
     % create wavelet
@@ -63,6 +61,6 @@ for fi=1:length(frex)
 end
 
 f = freqList;
-t = 1/fs:1/fs:length(x);
+t = 1/fs:1/fs:length(x)/fs;
 
 end
